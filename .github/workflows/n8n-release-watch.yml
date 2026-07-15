@@ -22,12 +22,13 @@ jobs:
 
       - name: Commit updated state
         run: |
-          if ! git diff --quiet known_versions.txt; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add known_versions.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add known_versions.txt
+          if git diff --cached --quiet; then
+            echo "Khong co thay doi de commit"
+          else
             git commit -m "chore: cap nhat known_versions.txt [skip ci]"
             git push
-          else
-            echo "Khong co thay doi de commit"
           fi
+
