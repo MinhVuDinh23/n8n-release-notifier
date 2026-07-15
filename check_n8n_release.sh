@@ -51,6 +51,22 @@ fi
 
 combined_pool=$(printf '%s\n%s\n' "$current_all" "$known_all" | sort -V -u)
 
+# Don changelog: bo phan HTML/badge tu dong sinh (stage-review, cubic...), bo
+# link markdown chi giu lai text, doi header ### thanh dong emoji cho de doc
+clean_changelog() {
+    printf '%s' "$1" \
+      | sed '/<!--/,$d' \
+      | sed -E 's/\[([^]]+)\]\([^)]+\)/\1/g' \
+      | sed -E '/^## /d' \
+      | sed -E 's/^### Bug Fixes[[:space:]]*$/🔧 Bug Fixes:/' \
+      | sed -E 's/^### Features[[:space:]]*$/✨ Features:/' \
+      | sed -E 's/^### (.+)/📌 \1:/' \
+      | sed -E 's/^\* /• /' \
+      | sed -E 's/\*\*([^*]+)\*\*/\1/g' \
+      | cat -s \
+      | sed -e '1{/^$/d}'
+}
+
 while IFS= read -r v; do
     [ -z "$v" ] && continue
     mm=$(echo "$v" | cut -d. -f1,2)
@@ -66,8 +82,8 @@ while IFS= read -r v; do
 
     release_body=$(echo "$releases_json" | jq -r --arg tag "n8n@${v}" \
       '.[] | select(.tag_name == $tag) | .body // "Khong co changelog"')
-    release_body_short=$(echo "$release_body" | head -c 2000)
-    release_url="https://github.com/${REPO}/releases/tag/n8n@${v}"
+    release_body_clean=$(clean_changelog "$release_body")
+    release_body_short=$(echo "$release_body_clean" | head -c 2000)
 
     message=$(cat <<EOF
 🆕 N8N nhanh ${mm}.x co ban stable moi: ${v}
@@ -75,8 +91,6 @@ So voi ban gan nhat cung nhanh: ${previous_version:-khong co, day la ban dau tie
 
 📋 Changelog:
 ${release_body_short}
-
-🔗 ${release_url}
 EOF
 )
 
